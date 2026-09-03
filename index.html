@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Windows 12 — a concept</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#0f0f1c;
+    --bg-teal:#0c2a30;
+    --bg-plum:#241a3a;
+    --glass: rgba(24,22,36,0.55);
+    --glass-strong: rgba(24,22,36,0.78);
+    --glass-border: rgba(255,255,255,0.09);
+    --text: #f3efea;
+    --text-muted: #9c96aa;
+    --amber:#ffb56b;
+    --violet:#8f7cff;
+    --teal:#63d9c4;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%; width:100%;
+    font-family:'Inter', sans-serif;
+    color:var(--text);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit; cursor:pointer;}
+  button:focus-visible, input:focus-visible, .window-close:focus-visible{
+    outline:2px solid var(--teal); outline-offset:2px;
+  }
+
+  /* ---------- Wallpaper ---------- */
+  #wallpaper{
+    position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(circle at 18% 22%, rgba(143,124,255,0.35), transparent 45%),
+      radial-gradient(circle at 82% 15%, rgba(99,217,196,0.22), transparent 40%),
+      radial-gradient(circle at 65% 80%, rgba(255,181,107,0.20), transparent 45%),
+      linear-gradient(160deg, var(--bg-plum), var(--bg-deep) 45%, var(--bg-teal) 100%);
+    background-size: 140% 140%, 140% 140%, 140% 140%, 100% 100%;
+    animation: drift 32s ease-in-out infinite alternate;
+  }
+  @keyframes drift{
+    0%{ background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
+    100%{ background-position: 20% 15%, 80% 10%, 40% 85%, 0 0; }
+  }
+  #grain{
+    position:fixed; inset:0; z-index:1; pointer-events:none;
+    opacity:0.05; mix-blend-mode:overlay;
+  }
+  .orb{
+    position:fixed; border-radius:50%; filter:blur(60px); z-index:0; pointer-events:none;
+    animation: float 26s ease-in-out infinite;
+  }
+  .orb1{ width:380px; height:380px; top:-80px; left:-100px; background:var(--violet); opacity:0.25; }
+  .orb2{ width:300px; height:300px; bottom:-60px; right:-60px; background:var(--amber); opacity:0.18; animation-delay:-8s; }
+  @keyframes float{
+    0%,100%{ transform: translate(0,0); }
+    50%{ transform: translate(30px,-20px); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    #wallpaper, .orb{ animation:none; }
+  }
+
+  /* ---------- Top bar ---------- */
+  #topbar{
+    position:fixed; top:28px; left:32px; right:32px; z-index:5;
+    display:flex; justify-content:space-between; align-items:flex-start;
+  }
+  .wordmark{
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .wordmark .logo-row{ display:flex; align-items:center; gap:10px; }
+  .logo-mark{ display:grid; grid-template-columns:9px 13px; grid-template-rows:13px 9px; gap:3px; }
+  .logo-mark span{ border-radius:3px; }
+  .logo-mark span:nth-child(1){ background:var(--amber); }
+  .logo-mark span:nth-child(2){ background:var(--violet); }
+  .logo-mark span:nth-child(3){ background:var(--teal); }
+  .logo-mark span:nth-child(4){ background:#ffffff; opacity:0.5; }
+  .wordmark h1{
+    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:19px;
+    margin:0; letter-spacing:-0.02em;
+  }
+  .wordmark p{
+    margin:0; font-size:13px; color:var(--text-muted); font-weight:400;
+    padding-left:31px;
+  }
+
+  #clockcard{
+    background:var(--glass); border:1px solid var(--glass-border);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-radius:18px; padding:14px 20px; text-align:right; min-width:150px;
+  }
+  #clock{
+    font-family:'Space Grotesk', sans-serif; font-size:30px; font-weight:500;
+    letter-spacing:-0.01em; line-height:1;
+  }
+  #date{ font-size:12px; color:var(--text-muted); margin-top:4px; }
+
+  /* ---------- Center hero ---------- */
+  #hero{
+    position:fixed; left:50%; top:42%; transform:translate(-50%,-50%);
+    z-index:3; text-align:center; pointer-events:none;
+    transition:opacity 0.5s ease;
+  }
+  #hero p{
+    font-family:'Space Grotesk', sans-serif; font-weight:400; font-size:15px;
+    color:var(--text-muted); letter-spacing:0.01em; margin:0;
+  }
+  #hero.hide{ opacity:0; }
+
+  /* ---------- Taskbar ---------- */
+  #taskbar{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    z-index:10; display:flex; align-items:center; gap:6px;
+    background:var(--glass-strong); border:1px solid var(--glass-border);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    padding:8px; border-radius:999px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
+  .tb-btn{
+    width:46px; height:46px; border-radius:999px; border:none;
+    background:transparent; color:var(--text);
+    display:flex; align-items:center; justify-content:center;
+    position:relative; transition: background 0.18s ease, transform 0.18s ease;
+  }
+  .tb-btn:hover{ background:rgba(255,255,255,0.08); transform:translateY(-2px); }
+  .tb-btn.active::after{
+    content:''; position:absolute; bottom:-9px; left:50%; transform:translateX(-50%);
+    width:4px; height:4px; border-radius:50%; background:var(--teal);
+  }
+  .tb-icon{ width:19px; height:19px; }
+  .tb-divider{ width:1px; height:26px; background:var(--glass-border); margin:0 4px; }
+  #start-btn .logo-mark{ grid-template-columns:7px 10px; grid-template-rows:10px 7px; gap:2px; }
+  #aura-btn{
+    background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9), transparent 45%),
+                linear-gradient(135deg, var(--violet), var(--teal));
+    box-shadow: 0 0 22px rgba(143,124,255,0.55);
+    animation: pulse 3.2s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 18px rgba(143,124,255,0.45); }
+    50%{ box-shadow:0 0 30px rgba(99,217,196,0.55); }
+  }
+  @media (prefers-reduced-motion: reduce){ #aura-btn{ animation:none; } }
+
+  /* ---------- Launcher overlay ---------- */
+  #launcher-overlay{
+    position:fixed; inset:0; z-index:30; display:none;
+    align-items:flex-start; justify-content:center; padding-top:12vh;
+    background:rgba(8,8,14,0.45); backdrop-filter:blur(6px);
+  }
+  #launcher-overlay.open{ display:flex; }
+  #launcher{
+    width:min(560px, 88vw); background:var(--glass-strong); border:1px solid var(--glass-border);
+    border-radius:24px; padding:22px; backdrop-filter:blur(26px);
+    animation: rise 0.28s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes rise{ from{ opacity:0; transform:translateY(16px) scale(0.98); } to{ opacity:1; transform:none; } }
+  #launcher input{
+    width:100%; background:rgba(255,255,255,0.06); border:1px solid var(--glass-border);
+    border-radius:14px; padding:13px 16px; color:var(--text); font-size:14px; margin-bottom:18px;
+  }
+  #launcher input::placeholder{ color:var(--text-muted); }
+  .app-grid{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:16px;
+  }
+  .app-tile{
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    background:transparent; border:none; color:var(--text); padding:10px 4px; border-radius:14px;
+    transition: background 0.15s ease;
+  }
+  .app-tile:hover{ background:rgba(255,255,255,0.06); }
+  .app-tile .icon-sq{
+    width:44px; height:44px; border-radius:13px; display:flex; align-items:center; justify-content:center;
+  }
+  .app-tile span{ font-size:12px; color:var(--text-muted); }
+
+  /* ---------- Windows ---------- */
+  .app-window{
+    position:fixed; z-index:20; width:380px;
+    background:var(--glass-strong); border:1px solid var(--glass-border);
+    border-radius:18px; overflow:hidden; display:none;
+    backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+    box-shadow:0 30px 70px rgba(0,0,0,0.4);
+    animation: rise 0.24s cubic-bezier(.2,.8,.2,1);
+  }
+  .app-window.open{ display:block; }
+  .win-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px; border-bottom:1px solid var(--glass-border);
+  }
+  .win-head .win-title{ display:flex; align-items:center; gap:10px; font-size:13px; font-weight:500; }
+  .win-title .icon-sq{ width:24px; height:24px; border-radius:7px; }
+  .win-close{
+    width:26px; height:26px; border-radius:8px; border:none; background:rgba(255,255,255,0.06);
+    color:var(--text-muted); font-size:13px; line-height:1;
+  }
+  .win-close:hover{ background:rgba(255,255,255,0.12); color:var(--text); }
+  .win-body{ padding:16px; font-size:13px; }
+
+  /* Files content */
+  .folder-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .folder-chip{
+    background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:12px;
+    padding:12px 8px; text-align:center; font-size:11px; color:var(--text-muted);
+  }
+  .folder-chip .icon-sq{ width:28px; height:28px; border-radius:8px; margin:0 auto 6px; }
+
+  /* Browser content */
+  .addr-bar{
+    background:rgba(255,255,255,0.06); border:1px solid var(--glass-border); border-radius:10px;
+    padding:9px 12px; font-size:12px; color:var(--text-muted); margin-bottom:14px;
+  }
+  .shortcut-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .shortcut{
+    background:rgba(255,255,255,0.05); border-radius:12px; padding:14px 6px; text-align:center;
+    font-size:11px; color:var(--text-muted);
+  }
+
+  /* Mail content */
+  .mail-row{ padding:10px 0; border-bottom:1px solid var(--glass-border); }
+  .mail-row:last-child{ border-bottom:none; }
+  .mail-row .sender{ font-size:12.5px; font-weight:500; }
+  .mail-row .snippet{ font-size:11.5px; color:var(--text-muted); margin-top:2px; }
+
+  /* Music content */
+  .now-playing{ display:flex; align-items:center; gap:12px; }
+  .now-playing .icon-sq{ width:52px; height:52px; border-radius:12px; flex-shrink:0; }
+  .track-name{ font-size:13px; font-weight:500; }
+  .track-artist{ font-size:11.5px; color:var(--text-muted); }
+  .progress{ height:3px; background:rgba(255,255,255,0.1); border-radius:2px; margin-top:10px; overflow:hidden; }
+  .progress-fill{ height:100%; width:38%; background:var(--teal); }
+  .play-btn{
+    width:34px; height:34px; border-radius:50%; border:none; background:var(--text); color:var(--bg-deep);
+    flex-shrink:0; margin-left:auto; font-size:12px;
+  }
+
+  /* Settings content */
+  .setting-row{ display:flex; align-items:center; justify-content:space-between; padding:9px 0; }
+  .toggle{
+    width:36px; height:20px; border-radius:999px; background:rgba(255,255,255,0.12); border:none;
+    position:relative; flex-shrink:0;
+  }
+  .toggle::after{
+    content:''; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%;
+    background:var(--text); transition:transform 0.18s ease;
+  }
+  .toggle.on{ background:var(--teal); }
+  .toggle.on::after{ transform:translateX(16px); background:var(--bg-deep); }
+
+  /* ---------- Aura panel ---------- */
+  #aura-panel{
+    position:fixed; top:0; right:-360px; width:340px; height:100%; z-index:40;
+    background:var(--glass-strong); border-left:1px solid var(--glass-border);
+    backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px);
+    display:flex; flex-direction:column; transition:right 0.32s cubic-bezier(.2,.8,.2,1);
+  }
+  #aura-panel.open{ right:0; }
+  .aura-head{ padding:24px 20px 16px; border-bottom:1px solid var(--glass-border); }
+  .aura-head h2{ font-family:'Space Grotesk',sans-serif; font-size:18px; margin:0 0 3px; font-weight:600; }
+  .aura-head p{ margin:0; font-size:12px; color:var(--text-muted); }
+  .aura-close{
+    position:absolute; top:24px; right:20px; width:26px; height:26px; border-radius:8px; border:none;
+    background:rgba(255,255,255,0.06); color:var(--text-muted); font-size:13px;
+  }
+  .aura-body{ flex:1; overflow-y:auto; padding:18px 20px; display:flex; flex-direction:column; gap:10px; }
+  .chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px; }
+  .chip{
+    background:rgba(255,255,255,0.06); border:1px solid var(--glass-border); border-radius:999px;
+    padding:8px 13px; font-size:11.5px; color:var(--text); border-width:1px;
+  }
+  .chip:hover{ background:rgba(255,255,255,0.1); }
+  .bubble{ max-width:85%; padding:10px 13px; border-radius:14px; font-size:12.5px; line-height:1.5; }
+  .bubble.user{ align-self:flex-end; background:var(--violet); color:#fff; border-bottom-right-radius:4px; }
+  .bubble.aura{ align-self:flex-start; background:rgba(255,255,255,0.07); border-bottom-left-radius:4px; }
+  .aura-input-row{ padding:14px 20px 20px; border-top:1px solid var(--glass-border); display:flex; gap:8px; }
+  .aura-input-row input{
+    flex:1; background:rgba(255,255,255,0.06); border:1px solid var(--glass-border); border-radius:12px;
+    padding:11px 13px; color:var(--text); font-size:12.5px;
+  }
+  .aura-send{
+    width:38px; height:38px; border-radius:11px; border:none; background:var(--teal); color:var(--bg-deep);
+    font-size:14px; flex-shrink:0;
+  }
+</style>
+</head>
+<body>
+
+<div id="wallpaper"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<svg id="grain" width="100%" height="100%">
+  <filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter>
+  <rect width="100%" height="100%" filter="url(#noise)"/>
+</svg>
+
+<div id="topbar">
+  <div class="wordmark">
+    <div class="logo-row">
+      <div class="logo-mark"><span></span><span></span><span></span><span></span></div>
+      <h1>windows 12</h1>
+    </div>
+    <p>a concept, imagined</p>
+  </div>
+  <div id="clockcard">
+    <div id="clock">--:--</div>
+    <div id="date">loading date</div>
+  </div>
+</div>
+
+<div id="hero">
+  <p>Everything, one thought away.</p>
+</div>
+
+<!-- Windows -->
+<div class="app-window" id="win-files" style="top:16%; left:8%;">
+  <div class="win-head">
+    <div class="win-title"><div class="icon-sq" style="background:var(--amber);"></div>Files</div>
+    <button class="win-close" data-close="win-files" aria-label="Close Files">✕</button>
+  </div>
+  <div class="win-body">
+    <div class="folder-grid">
+      <div class="folder-chip"><div class="icon-sq" style="background:var(--amber);"></div>Documents</div>
+      <div class="folder-chip"><div class="icon-sq" style="background:var(--violet);"></div>Projects</div>
+      <div class="folder-chip"><div class="icon-sq" style="background:var(--teal);"></div>Media</div>
+      <div class="folder-chip"><div class="icon-sq" style="background:var(--amber);"></div>Downloads</div>
+      <div class="folder-chip"><div class="icon-sq" style="background:var(--violet);"></div>Archive</div>
+      <div class="folder-chip"><div class="icon-sq" style="background:var(--teal);"></div>Shared</div>
+    </div>
+  </div>
+</div>
+
+<div class="app-window" id="win-browser" style="top:14%; left:34%;">
+  <div class="win-head">
+    <div class="win-title"><div class="icon-sq" style="background:var(--violet);"></div>Browser</div>
+    <button class="win-close" data-close="win-browser" aria-label="Close Browser">✕</button>
+  </div>
+  <div class="win-body">
+    <div class="addr-bar">windows.new</div>
+    <div class="shortcut-row">
+      <div class="shortcut">Search</div>
+      <div class="shortcut">News</div>
+      <div class="shortcut">Weather</div>
+      <div class="shortcut">Notes</div>
+    </div>
+  </div>
+</div>
+
+<div class="app-window" id="win-mail" style="top:20%; left:12%;">
+  <div class="win-head">
+    <div class="win-title"><div class="icon-sq" style="background:var(--teal);"></div>Mail</div>
+    <button class="win-close" data-close="win-mail" aria-label="Close Mail">✕</button>
+  </div>
+  <div class="win-body">
+    <div class="mail-row"><div class="sender">Design review</div><div class="snippet">Two comments left on the onboarding flow</div></div>
+    <div class="mail-row"><div class="sender">Team standup notes</div><div class="snippet">Shipping the settings panel this week</div></div>
+    <div class="mail-row"><div class="sender">Newsletter</div><div class="snippet">Three reads on ambient interfaces</div></div>
+    <div class="mail-row"><div class="sender">Calendar</div><div class="snippet">Focus block moved to 4 pm</div></div>
+  </div>
+</div>
+
+<div class="app-window" id="win-music" style="top:22%; left:40%;">
+  <div class="win-head">
+    <div class="win-title"><div class="icon-sq" style="background:var(--amber);"></div>Music</div>
+    <button class="win-close" data-close="win-music" aria-label="Close Music">✕</button>
+  </div>
+  <div class="win-body">
+    <div class="now-playing">
+      <div class="icon-sq" style="background:linear-gradient(135deg,var(--violet),var(--teal));"></div>
+      <div>
+        <div class="track-name">Late Signal</div>
+        <div class="track-artist">Analog Horizon</div>
+      </div>
+      <button class="play-btn" aria-label="Play">▶</button>
+    </div>
+    <div class="progress"><div class="progress-fill"></div></div>
+  </div>
+</div>
+
+<div class="app-window" id="win-settings" style="top:18%; left:60%;">
+  <div class="win-head">
+    <div class="win-title"><div class="icon-sq" style="background:var(--text-muted);"></div>Settings</div>
+    <button class="win-close" data-close="win-settings" aria-label="Close Settings">✕</button>
+  </div>
+  <div class="win-body">
+    <div class="setting-row">Dark theme<button class="toggle on" data-toggle></button></div>
+    <div class="setting-row">Aura suggestions<button class="toggle on" data-toggle></button></div>
+    <div class="setting-row">Focus mode<button class="toggle" data-toggle></button></div>
+    <div class="setting-row">Sync across devices<button class="toggle on" data-toggle></button></div>
+  </div>
+</div>
+
+<!-- Launcher -->
+<div id="launcher-overlay">
+  <div id="launcher">
+    <input type="text" placeholder="Search apps and files" aria-label="Search apps and files">
+    <div class="app-grid">
+      <button class="app-tile" data-open="win-files"><div class="icon-sq" style="background:var(--amber);"></div><span>Files</span></button>
+      <button class="app-tile" data-open="win-browser"><div class="icon-sq" style="background:var(--violet);"></div><span>Browser</span></button>
+      <button class="app-tile" data-open="win-mail"><div class="icon-sq" style="background:var(--teal);"></div><span>Mail</span></button>
+      <button class="app-tile" data-open="win-music"><div class="icon-sq" style="background:var(--amber);"></div><span>Music</span></button>
+      <button class="app-tile" data-open="win-settings"><div class="icon-sq" style="background:var(--text-muted);"></div><span>Settings</span></button>
+      <button class="app-tile" data-open-aura><div class="icon-sq" style="background:linear-gradient(135deg,var(--violet),var(--teal));"></div><span>Aura</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Taskbar -->
+<div id="taskbar">
+  <button class="tb-btn" id="start-btn" aria-label="Open launcher">
+    <div class="logo-mark"><span></span><span></span><span></span><span></span></div>
+  </button>
+  <div class="tb-divider"></div>
+  <button class="tb-btn" data-open="win-files" aria-label="Open Files"><div class="icon-sq" style="width:20px;height:20px;border-radius:6px;background:var(--amber);"></div></button>
+  <button class="tb-btn" data-open="win-browser" aria-label="Open Browser"><div class="icon-sq" style="width:20px;height:20px;border-radius:6px;background:var(--violet);"></div></button>
+  <button class="tb-btn" data-open="win-mail" aria-label="Open Mail"><div class="icon-sq" style="width:20px;height:20px;border-radius:6px;background:var(--teal);"></div></button>
+  <button class="tb-btn" data-open="win-music" aria-label="Open Music"><div class="icon-sq" style="width:20px;height:20px;border-radius:6px;background:var(--amber);"></div></button>
+  <button class="tb-btn" data-open="win-settings" aria-label="Open Settings"><div class="icon-sq" style="width:20px;height:20px;border-radius:6px;background:var(--text-muted);"></div></button>
+  <div class="tb-divider"></div>
+  <button class="tb-btn" id="aura-btn" aria-label="Open Aura"></button>
+</div>
+
+<!-- Aura panel -->
+<div id="aura-panel">
+  <div class="aura-head">
+    <h2>Aura</h2>
+    <p>Your OS companion</p>
+    <button class="aura-close" id="aura-close" aria-label="Close Aura">✕</button>
+  </div>
+  <div class="aura-body" id="aura-body">
+    <div class="chip-row">
+      <button class="chip" data-prompt="Summarize my week">Summarize my week</button>
+      <button class="chip" data-prompt="Clean up my desktop">Clean up my desktop</button>
+      <button class="chip" data-prompt="Find that file from Tuesday">Find that file from Tuesday</button>
+    </div>
+  </div>
+  <div class="aura-input-row">
+    <input type="text" id="aura-input" placeholder="Ask Aura anything" aria-label="Ask Aura anything">
+    <button class="aura-send" id="aura-send" aria-label="Send">↑</button>
+  </div>
+</div>
+
+<script>
+  // Clock
+  function tick(){
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('date').textContent =
+      now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
+  }
+  tick(); setInterval(tick, 1000);
+
+  // Hide hero after first interaction
+  const hero = document.getElementById('hero');
+  function hideHero(){ hero.classList.add('hide'); }
+
+  // Window open/close
+  function openWindow(id){
+    document.getElementById(id).classList.add('open');
+    hideHero();
+  }
+  function closeWindow(id){
+    document.getElementById(id).classList.remove('open');
+  }
+  document.querySelectorAll('[data-open]').forEach(btn=>{
+    btn.addEventListener('click', ()=> openWindow(btn.getAttribute('data-open')));
+  });
+  document.querySelectorAll('[data-close]').forEach(btn=>{
+    btn.addEventListener('click', ()=> closeWindow(btn.getAttribute('data-close')));
+  });
+
+  // Toggles
+  document.querySelectorAll('[data-toggle]').forEach(t=>{
+    t.addEventListener('click', ()=> t.classList.toggle('on'));
+  });
+
+  // Launcher
+  const launcherOverlay = document.getElementById('launcher-overlay');
+  document.getElementById('start-btn').addEventListener('click', ()=>{
+    launcherOverlay.classList.add('open'); hideHero();
+  });
+  launcherOverlay.addEventListener('click', (e)=>{
+    if(e.target === launcherOverlay) launcherOverlay.classList.remove('open');
+  });
+  document.querySelectorAll('.app-tile[data-open]').forEach(t=>{
+    t.addEventListener('click', ()=> launcherOverlay.classList.remove('open'));
+  });
+  document.querySelector('[data-open-aura]').addEventListener('click', ()=>{
+    launcherOverlay.classList.remove('open');
+    openAura();
+  });
+
+  // Aura panel
+  const auraPanel = document.getElementById('aura-panel');
+  const auraBody = document.getElementById('aura-body');
+  function openAura(){ auraPanel.classList.add('open'); hideHero(); }
+  document.getElementById('aura-btn').addEventListener('click', openAura);
+  document.getElementById('aura-close').addEventListener('click', ()=> auraPanel.classList.remove('open'));
+
+  function addBubble(text, kind){
+    const b = document.createElement('div');
+    b.className = 'bubble ' + kind;
+    b.textContent = text;
+    auraBody.appendChild(b);
+    auraBody.scrollTop = auraBody.scrollHeight;
+  }
+  const auraReplies = {
+    "Summarize my week": "Three focused work blocks, two meetings moved earlier, and one deadline shifted to Friday. Want the full breakdown?",
+    "Clean up my desktop": "Grouped 12 files into 3 folders and flagged 2 for review before deleting.",
+    "Find that file from Tuesday": "Found it — a draft named 'concept-notes' edited at 3:40 pm, saved in Projects."
+  };
+  function askAura(text){
+    if(!text.trim()) return;
+    addBubble(text, 'user');
+    setTimeout(()=>{
+      addBubble(auraReplies[text] || "Working on it — I'll have that ready in a moment.", 'aura');
+    }, 500);
+  }
+  document.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click', ()=> askAura(c.getAttribute('data-prompt')));
+  });
+  document.getElementById('aura-send').addEventListener('click', ()=>{
+    const input = document.getElementById('aura-input');
+    askAura(input.value); input.value = '';
+  });
+  document.getElementById('aura-input').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){
+      const input = e.target;
+      askAura(input.value); input.value = '';
+    }
+  });
+</script>
+
+</body>
+</html>
